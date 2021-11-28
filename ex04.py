@@ -5,7 +5,7 @@ class File:
         self.name = name
         self.permission = "rwxr--r--"
 
-    def chown(self, owner="default"):
+    def chown(self, owner):
         self.owner = owner
 
     def ls(self):
