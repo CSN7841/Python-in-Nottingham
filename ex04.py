@@ -2,16 +2,15 @@ class File:
     # default value of owner
     owner = "default"
 
+    # Init
     def __init__(self, name, owner):
         self.name = name
         self.permission = "rwxr--r--"
         self.owner = owner
 
+    # All have file have owner
     def chown(self, owner="default"):
         self.owner = owner
-
-    def ls(self):
-        self.ls()
 
 
 # For print \t in ls()
@@ -21,8 +20,10 @@ def tabs(times):
 
 
 class PlainFile(File):
+    # Classname
     className = "PlainFile"
 
+    # Inherit from File
     def __init__(self, name, owner="default"):
         super().__init__(name, owner)
 
@@ -35,8 +36,10 @@ class Directory(File):
     className = "Directory"
     fileStr = ""
 
+    # Inherit from File
     def __init__(self, name, fileList, owner="default"):
         super().__init__(name, owner)
+        # A list for store file list
         self.list = fileList
 
     # For printing
@@ -49,25 +52,34 @@ class Directory(File):
                 self.fileStr = f"{self.fileStr},{str(others)}"
                 break
         except IndexError:
+            # If error set to ""
             self.fileStr = ""
         return f"{self.className}({self.name},[{self.fileStr}])"
 
     def findFolder(self, fList, depth, op):
+        # Traverse the list
         for files in fList:
+            # Check the class if it is PlainFile just print
             if files.className == "PlainFile":
+                # My func for print \t
                 tabs(depth)
+                # -l is for ls -l
                 if op == "-l":
                     print(f"{files.permission}  {files.owner}  {files.name}")
                 else:
                     print(f"{files.name}")
             else:
+                # If it is a Directory
                 tabs(depth)
                 if op == "-l":
                     print(f"{files.permission}  {files.owner}  {files.name}")
                 else:
                     print(f"{files.name}")
+                # Go deeper
                 depth += 1
+                # Recursion
                 self.findFolder(files.list, depth, op)
+                # Go out
                 depth -= 1
 
     def ls(self, op=""):
@@ -86,59 +98,73 @@ class Directory(File):
 class FileSystem:
 
     def __init__(self, Dir):
+        # A list to store the order of file
         self.fileDir = []
+        # Save all root in rootDir for compare or restore
         self.rootDir = Dir
+        # For current working Dir
         self.currentDir = Dir
+        # Init for the first root folder
         self.fileDir.append(Dir)
 
     def pwd(self):
-        # print(f"'{self.currentDir.name}'")
-        path = ""
-        for files in self.fileDir:
-            path += f"/{files.name}"
-        print(path)
+        # If not use fs.pwd uncomment following
+        # print(f"{self.currentDir.name}")
 
+        # If want to see path like absolute path uncomment following
+        # paths = ""
+        # for files in self.fileDir:
+        #     paths += f"/{files.name}"
+        # print(paths)
+
+        # If print(fs.pwd()) use following
+        return f"{self.currentDir.name}"
+
+    # A method for output path in method find()
     def getPath(self):
-        path = ""
+        paths = ""
         for files in self.fileDir:
-            path += f"/{files.name}"
-        return path
+            paths += f"/{files.name}"
+        return paths
 
+    # To use ls() in Directory
     def ls(self, op=""):
-        # for file in self.currentDir.list:
-        #     print(file.name)
         self.currentDir.ls(op)
 
     def cd(self, filename):
+        # For ".."
         if filename == "..":
             if self.currentDir == self.rootDir:
                 return
             else:
+                # Remove the file from tail
                 del self.fileDir[-1]
                 self.currentDir = self.fileDir[-1]
-                # for files in self.fileDir:
-                #     self.currentDir = files
                 return
 
         else:
             if self.currentDir.className == "PlainFile":
                 return
+            # Loop for finding file
             for files in self.currentDir.list:
                 if files.name == filename:
                     if files.className == "PlainFile":
                         print(f"{filename} is not a directory !")
                         return
                     else:
+                        # Add file to the end of list
                         self.fileDir.append(files)
+                        # Set current directory to here we are
                         self.currentDir = files
-                        # break
         if self.currentDir.name != filename:
             print("The directory does not exist!")
 
     def create_file(self, name):
+        # If the list is empty just add new file
         if not self.currentDir.list:
             self.currentDir.list += [PlainFile(name)]
         else:
+            # If not empty to see exists or not
             for files in self.currentDir.list:
                 if name == files.name:
                     print(f"The file {files.name} already exists!")
@@ -148,6 +174,7 @@ class FileSystem:
                     return
 
     def mkdir(self, name, owner="default"):
+        # Same as create_file(self, name)
         if not self.currentDir.list:
             self.currentDir.list += [Directory(name, [], owner)]
         else:
@@ -160,8 +187,10 @@ class FileSystem:
                     return
 
     def rm(self, name):
+        # Loop the find the same name file
         for files in self.currentDir.list:
             if name == files.name and files.className == "Directory":
+                # If
                 if files.list:
                     print("The directory is not empty !")
                     return
@@ -173,24 +202,33 @@ class FileSystem:
         print("The file does not exist !")
 
     def find(self, name):
+        # For mark found or not
         global found
         found = False
+        # For store the path to output
         global path
         path = ""
         for files in self.currentDir.list:
             if files.className == "Directory" and files.name != name:
+                # cd() to next Directory
                 self.cd(files.name)
+                # Recursion
                 self.find(name)
+                # Go back
                 self.cd("..")
+                # If found stop loop
+                # Found folder
                 if found:
                     return path
             elif files.name == name:
+                # Found file
                 found = True
                 path = f"{self.getPath()}" + "/" + name
                 return path
                 # print(f"{self.getPath()}" + "/" + name)
         return "File not found !"
 
+    # Recursion for change all owner
     def chown_R(self, newOwner):
         self.currentDir.chown(newOwner)
         if self.currentDir.className == "PlainFile":
@@ -199,49 +237,68 @@ class FileSystem:
             if files.className == "Directory":
                 files.chown(newOwner)
                 self.cd(files.name)
+                # Recursion
                 self.chown_R(newOwner)
                 self.cd("..")
             else:
                 files.chown(newOwner)
 
+    # My method to input like "777" "755" to change mod
     def chmod(self, command, filename):
+        # Two list for store weight and char
         pers = [4, 2, 1, 0]
         pers_cs = ["r", "w", "x", "-"]
+        #####
+        # Another way to implement not finish
         # bit = [0, 0, 0]
+        # bit[0] or bit[1] or bit[2] == 1 represent "r""w""x"
+        # == 0 "-"
+        #####
+        # Check the num right or not
         if len(command) != 3:
             print("Command not right !")
             return
         for files in self.currentDir.list:
             if files.name == filename:
                 temp = ""
-                # Problem
+                # Problem 755 should be "rwxr-xr-x" but mine "rwxrx-rx-  default  home"
                 for index in range(0, len(command)):
                     i, j, k = calPer(pers, int(command[index]))
+                    # Here is the bug, Characters are in order cannot do like this
                     temp += pers_cs[i] + pers_cs[j] + pers_cs[k]
-                    # file.permission[i*3-3:i*3-1] =
                     files.permission = temp
                     # print(i, j, k)
                 return
         print(f"{filename} is not here !")
 
-    # like [root,home,lfz] [root,home,thor]
+    # Init str like [root,home,lfz] [root,home,thor]
     def mv(self, filepath, target):
+        # To store local path
         localPath = []
+        # Target folder
         targetPath = []
+        # Buffer for chars
         temp = ""
 
+        # Traverse the input char by char
         for index in range(len(filepath)):
+            # Read "/" at the beginning pass
             if filepath[index] == "/" and index == 0:
                 continue
+            # Read a "/" add a word
             elif filepath[index] == "/":
                 localPath.append(temp)
                 temp = ""
+            # Read char one by one
             else:
                 temp += filepath[index]
 
+        # Put the last word into list
         localPath.append(temp)
+        # Restore temp
         temp = ""
 
+        # The same
         for index in range(len(target)):
             if target[index] == "/" and index == 0:
                 continue
@@ -256,23 +313,29 @@ class FileSystem:
         # print(localPath)
         # print(targetPath)
 
+        #####
+        # Go to Dir and delete file
         for now in localPath[0:len(localPath) - 1]:
             if self.currentDir.name == now:
                 continue
             self.cd(now)
         self.rm(localPath[-1])
 
+        # Back to User's original directory
         for times in range(len(localPath) - 1):
             self.cd("..")
 
+        # Go to Dir and new a file
         for now in targetPath:
             self.cd(now)
         self.create_file(localPath[-1])
 
+        # Back to User's original directory
         for times in range(len(targetPath)):
             self.cd("..")
 
 
+# A method for calculating the "777" and find the subscript to return
 def calPer(pers, num):
     for i in range(len(pers)):
         for j in range(len(pers)):
@@ -281,11 +344,11 @@ def calPer(pers, num):
                     return i, j, k
 
 
-# print("Testing question 1")
+print("Testing question 1")
 
 # question 1 should allow to create simple files and folders:
-# file = PlainFile("boot.exe")
-# folder = Directory("Downloads", [])
+file = PlainFile("boot.exe")
+folder = Directory("Downloads", [])
 
 root = Directory("root", [PlainFile("boot.exe"), Directory("home", [
     Directory("thor", [PlainFile("hunde.jpg"), PlainFile("quatsch.txt")]),
@@ -394,11 +457,13 @@ fs.cd("home")
 # fs.ls()
 print(fs.find("boot.exe"))  # shouldn't find it!
 print(fs.find("thor"))
+# fs.pwd()
 
 # My other test case
 # ls -l and chmod
 # fs = FileSystem(root)
-# fs.chmod("755", "home")
+fs.cd("..")
+fs.chmod("755", "home")
 # fs.ls("-l")
 
 # I have the idea of making mv, by using two list to store path one by one
@@ -411,3 +476,5 @@ print(fs.find("thor"))
 # fs.mv("/root/home/lfz", "/root/home/thor")
 # fs.ls()
 # fs.pwd()
+# fs.chown_R("Steven")
+fs.ls("-l")
