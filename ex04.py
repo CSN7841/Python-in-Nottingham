@@ -97,6 +97,11 @@ class FileSystem:
         for files in self.fileDir:
             path += f"/{files.name}"
         print(path)
+
+    def getPath(self):
+        path = ""
+        for files in self.fileDir:
+            path += f"/{files.name}"
         return path
 
     def ls(self, op=""):
@@ -179,7 +184,7 @@ class FileSystem:
                     return found
             elif files.name == name:
                 found = True
-                print(f"{self.pwd()}" + "/" + name)
+                print(f"{self.getPath()}" + "/" + name)
                 return found
         return False
 
