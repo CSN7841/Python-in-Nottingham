@@ -96,7 +96,7 @@ class FileSystem:
         path = ""
         for files in self.fileDir:
             path += f"/{files.name}"
-        print(path)
+        # print(path)
         return path
 
     def ls(self, op=""):
@@ -176,8 +176,6 @@ class FileSystem:
                 self.find(name)
                 if not found:
                     self.cd("..")
-                else:
-                    return True
             elif files.name == name:
                 found = True
                 print(f"{self.pwd()}" + "/" + name)
@@ -383,9 +381,9 @@ print(fs.find("boot.exe"))  # shouldn't find it!
 
 # My other test case
 # ls -l and chmod
-fs = FileSystem(root)
-fs.chmod("777", "home")
-fs.ls("-l")
+# fs = FileSystem(root)
+# fs.chmod("777", "home")
+# fs.ls("-l")
 
 # I have the idea of making mv, by using two list to store path one by one
 # like [root,home,lfz] [root,home,thor]
