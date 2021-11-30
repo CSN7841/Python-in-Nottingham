@@ -96,7 +96,7 @@ class FileSystem:
         path = ""
         for files in self.fileDir:
             path += f"/{files.name}"
-        # print(path)
+        print(path)
         return path
 
     def ls(self, op=""):
@@ -171,15 +171,16 @@ class FileSystem:
         global found
         found = False
         for files in self.currentDir.list:
-            if files.className == "Directory":
+            if files.className == "Directory" and files.name != name:
                 self.cd(files.name)
                 self.find(name)
-                if not found:
-                    self.cd("..")
+                self.cd("..")
+                if found:
+                    return found
             elif files.name == name:
                 found = True
                 print(f"{self.pwd()}" + "/" + name)
-                # return self.pwd() + "/" + name
+                return found
         return False
 
     def chown_R(self, newOwner):
@@ -348,6 +349,10 @@ print("Testing question 5e:  dot dot")
 root = Directory("root", [], owner="root")
 fs = FileSystem(root)
 fs.create_file("boot.exe")
+fs.mkdir("test")
+fs.cd("test")
+fs.create_file("test.txt")
+fs.cd("..")
 # when creating a file we do not need to indicate owner,
 # it will be the same as the working directory
 fs.mkdir("home", owner="root")
@@ -377,12 +382,15 @@ print("Testing question 5g:  find")
 
 print(fs.find("gatos.jpg"))
 fs.cd("home")
+# fs.pwd()
+# fs.ls()
 print(fs.find("boot.exe"))  # shouldn't find it!
+print(fs.find("thor"))
 
 # My other test case
 # ls -l and chmod
 # fs = FileSystem(root)
-# fs.chmod("777", "home")
+# fs.chmod("755", "home")
 # fs.ls("-l")
 
 # I have the idea of making mv, by using two list to store path one by one
@@ -391,5 +399,7 @@ print(fs.find("boot.exe"))  # shouldn't find it!
 # fs.pwd()
 # fs.cd("home")
 # fs.create_file("lfz")
+# fs.ls()
 # fs.mv("/root/home/lfz", "/root/home/thor")
 # fs.ls()
+# fs.pwd()
