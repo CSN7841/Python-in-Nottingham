@@ -97,6 +97,7 @@ class FileSystem:
         for files in self.fileDir:
             path += f"/{files.name}"
         print(path)
+        return path
 
     def ls(self, op=""):
         # for file in self.currentDir.list:
@@ -167,14 +168,21 @@ class FileSystem:
         print("The file does not exist !")
 
     def find(self, name):
+        global found
+        found = False
         for files in self.currentDir.list:
-            if files.name != name and files.className == "Directory":
+            if files.className == "Directory":
                 self.cd(files.name)
                 self.find(name)
-                self.cd("..")
+                if not found:
+                    self.cd("..")
+                else:
+                    return True
             elif files.name == name:
-                return f"{self.pwd()}/{name}"
-        return "File not found !"
+                found = True
+                print(f"{self.pwd()}" + "/" + name)
+                # return self.pwd() + "/" + name
+        return False
 
     def chown_R(self, newOwner):
         self.currentDir.chown(newOwner)
@@ -266,11 +274,11 @@ def calPer(pers, num):
                     return i, j, k
 
 
-print("Testing question 1")
+# print("Testing question 1")
 
 # question 1 should allow to create simple files and folders:
-file = PlainFile("boot.exe")
-folder = Directory("Downloads", [])
+# file = PlainFile("boot.exe")
+# folder = Directory("Downloads", [])
 
 root = Directory("root", [PlainFile("boot.exe"), Directory("home", [
     Directory("thor", [PlainFile("hunde.jpg"), PlainFile("quatsch.txt")]),
@@ -285,8 +293,8 @@ print(root)
 print("Testing question 3")
 
 # question 3: test chown()
-# file = PlainFile("boot.exe")
-# folder = Directory("Downloads", [])
+file = PlainFile("boot.exe")
+folder = Directory("Downloads", [])
 print(f'file.owner: {file.owner}; folder: {folder.owner}')
 file.chown("root")
 folder.chown("isaac")
@@ -327,6 +335,7 @@ fs.ls()
 print("Testing question 5d:  mkdir and create file")
 fs = FileSystem(root)  # re-initialise fs
 
+
 fs.mkdir("test")
 # the owner of the directory should be 'default' as not indicated.
 # fs.mkdir("test","isaac") would set the owner to isaac
@@ -366,7 +375,7 @@ fs.cd("..")
 fs.rm("test")
 fs.ls()
 
-print("Testing question 5e:  find")
+print("Testing question 5g:  find")
 
 print(fs.find("gatos.jpg"))
 fs.cd("home")
@@ -381,8 +390,8 @@ fs.ls("-l")
 # I have the idea of making mv, by using two list to store path one by one
 # like [root,home,lfz] [root,home,thor]
 # Just use cd() while searching in lists
-fs.pwd()
-fs.cd("home")
-fs.create_file("lfz")
-fs.mv("/root/home/lfz", "/root/home/thor")
-fs.ls()
+# fs.pwd()
+# fs.cd("home")
+# fs.create_file("lfz")
+# fs.mv("/root/home/lfz", "/root/home/thor")
+# fs.ls()
