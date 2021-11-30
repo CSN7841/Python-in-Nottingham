@@ -175,18 +175,21 @@ class FileSystem:
     def find(self, name):
         global found
         found = False
+        global path
+        path = ""
         for files in self.currentDir.list:
             if files.className == "Directory" and files.name != name:
                 self.cd(files.name)
                 self.find(name)
                 self.cd("..")
                 if found:
-                    return found
+                    return path
             elif files.name == name:
                 found = True
-                print(f"{self.getPath()}" + "/" + name)
-                return found
-        return False
+                path = f"{self.getPath()}" + "/" + name
+                return path
+                # print(f"{self.getPath()}" + "/" + name)
+        return "File not found !"
 
     def chown_R(self, newOwner):
         self.currentDir.chown(newOwner)
