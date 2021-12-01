@@ -196,8 +196,8 @@ class FileSystem:
             elif name == files.name and files.className == "PlainFile":
                 self.currentDir.list.remove(files)
                 return files
-        print("The file does not exist !")
-        return "The file does not exist !"
+        print(f"The file '{name}' does not exist !")
+        return
 
     def find(self, name):
         # For mark found or not
@@ -331,6 +331,8 @@ class FileSystem:
 
         # I change the return of rm() make it return the delete file's info
         fileTemp = self.rm(str(localPath[-1]))
+        if fileTemp is None:
+            return
 
         # Back to User's original directory
         for times in range(len(localPath) - 1):
@@ -341,7 +343,8 @@ class FileSystem:
             self.cd(now)
 
         # Create a new file with the same properties
-        self.create_file(fileTemp.name, fileTemp.owner, fileTemp.permission)
+        if fileTemp is not None:
+            self.create_file(fileTemp.name, fileTemp.owner, fileTemp.permission)
 
         # Back to User's original directory
         for times in range(len(targetPath)):
@@ -487,7 +490,7 @@ fs.create_file("lfz")
 fs.chown("lfz", "Steven")
 fs.chmod("777", "lfz")
 fs.ls()
-fs.mv("/root/home/lfz", "/root/home/thor")
+fs.mv("/root/home/lf", "/root/home/thor")
 fs.ls("-l")
 fs.pwd()
 # fs.chown_R("Steven")
