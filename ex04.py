@@ -1,11 +1,9 @@
 class File:
-    # default value of owner
-    owner = "default"
 
     # Init
-    def __init__(self, name, owner):
+    def __init__(self, name, owner, permission):
         self.name = name
-        self.permission = "rwxr--r--"
+        self.permission = permission
         self.owner = owner
 
     # All have file have owner
@@ -24,8 +22,8 @@ class PlainFile(File):
     className = "PlainFile"
 
     # Inherit from File
-    def __init__(self, name, owner="default"):
-        super().__init__(name, owner)
+    def __init__(self, name, owner="default", permission="rwxr--r--"):
+        super().__init__(name, owner, permission)
 
     # For printing
     def __str__(self):
@@ -37,8 +35,8 @@ class Directory(File):
     fileStr = ""
 
     # Inherit from File
-    def __init__(self, name, fileList, owner="default"):
-        super().__init__(name, owner)
+    def __init__(self, name, fileList, owner="default", permission="rwxr--r--"):
+        super().__init__(name, owner, permission)
         # A list for store file list
         self.list = fileList
 
@@ -109,7 +107,7 @@ class FileSystem:
 
     def pwd(self):
         # If not use fs.pwd uncomment following
-        # print(f"{self.currentDir.name}")
+        print(f"{self.currentDir.name}")
 
         # If want to see path like absolute path uncomment following
         # paths = ""
@@ -159,38 +157,37 @@ class FileSystem:
         if self.currentDir.name != filename:
             print("The directory does not exist!")
 
-    def create_file(self, name):
+    def create_file(self, name, owner="default", permission="rwxr--r--"):
         # If the list is empty just add new file
         if not self.currentDir.list:
-            self.currentDir.list += [PlainFile(name)]
+            self.currentDir.list += [PlainFile(name, owner, permission)]
         else:
             # If not empty to see exists or not
             for files in self.currentDir.list:
                 if name == files.name:
                     print(f"The file {files.name} already exists!")
                     return
-                else:
-                    self.currentDir.list += [PlainFile(name)]
-                    return
+            self.currentDir.list += [PlainFile(name, owner, permission)]
+            return
 
-    def mkdir(self, name, owner="default"):
+    def mkdir(self, name, owner="default", permission="rwxr--r--"):
         # Same as create_file(self, name)
         if not self.currentDir.list:
-            self.currentDir.list += [Directory(name, [], owner)]
+            self.currentDir.list += [Directory(name, [], owner, permission)]
         else:
             for files in self.currentDir.list:
                 if name == files.name:
                     print(f"The directory {files.name} already exists!")
                     return
                 else:
-                    self.currentDir.list += [Directory(name, [])]
+                    self.currentDir.list += [Directory(name, [], owner, permission)]
                     return
 
     def rm(self, name):
         # Loop the find the same name file
         for files in self.currentDir.list:
             if name == files.name and files.className == "Directory":
-                # If
+                # If list not empty
                 if files.list:
                     print("The directory is not empty !")
                     return
@@ -198,8 +195,9 @@ class FileSystem:
                     self.currentDir.list.remove(files)
             elif name == files.name and files.className == "PlainFile":
                 self.currentDir.list.remove(files)
-                return
+                return files
         print("The file does not exist !")
+        return "The file does not exist !"
 
     def find(self, name):
         # For mark found or not
@@ -228,6 +226,11 @@ class FileSystem:
                 # print(f"{self.getPath()}" + "/" + name)
         return "File not found !"
 
+    def chown(self, name, owner):
+        for files in self.currentDir.list:
+            if name == files.name:
+                files.chown(owner)
+
     # Recursion for change all owner
     def chown_R(self, newOwner):
         self.currentDir.chown(newOwner)
@@ -247,32 +250,37 @@ class FileSystem:
     def chmod(self, command, filename):
         # Two list for store weight and char
         pers = [4, 2, 1, 0]
-        pers_cs = ["r", "w", "x", "-"]
-        #####
-        # Another way to implement not finish
-        # bit = [0, 0, 0]
-        # bit[0] or bit[1] or bit[2] == 1 represent "r""w""x"
-        # == 0 "-"
-        #####
-        # Check the num right or not
+        pers_cs = ["r", "w", "x"]
+        bit = [0, 0, 0]
         if len(command) != 3:
             print("Command not right !")
             return
         for files in self.currentDir.list:
             if files.name == filename:
                 temp = ""
-                # Problem 755 should be "rwxr-xr-x" but mine "rwxrx-rx-  default  home"
-                for index in range(0, len(command)):
-                    i, j, k = calPer(pers, int(command[index]))
-                    # Here is the bug, Characters are in order cannot do like this
-                    temp += pers_cs[i] + pers_cs[j] + pers_cs[k]
+                for index in range(len(command)):
+                    # [i, j, k] is the index of pers
+                    [i, j, k] = calPer(pers, int(command[index]))
+                    # Set the bit [0, 0, 0] to some like [1, 0, 1] which is related to ["r", "w", "x"]
+                    for bits in [i, j, k]:
+                        # bits are for [i, j, k] indicate where is 1 in bit[0, 0, 0]
+                        # If j = 2 so bit[j = 2] should be 1 [0, 0, 1]
+                        if bits <= 2:
+                            bit[bits] = 1
+                    for perIndex in range(len(bit)):
+                        if bit[perIndex] != 0:
+                            temp += pers_cs[perIndex]
+                        else:
+                            temp += "-"
                     files.permission = temp
-                    # print(i, j, k)
+                    # Zero them
+                    bit = [0, 0, 0]
                 return
         print(f"{filename} is not here !")
 
     # Init str like [root,home,lfz] [root,home,thor]
     def mv(self, filepath, target):
+        self.currentDir = self.rootDir
         # To store local path
         localPath = []
         # Target folder
@@ -308,6 +316,7 @@ class FileSystem:
             else:
                 temp += target[index]
 
+        # Put the last word into list
         targetPath.append(temp)
 
         # print(localPath)
@@ -319,7 +328,9 @@ class FileSystem:
             if self.currentDir.name == now:
                 continue
             self.cd(now)
-        self.rm(localPath[-1])
+
+        # I change the return of rm() make it return the delete file's info
+        fileTemp = self.rm(str(localPath[-1]))
 
         # Back to User's original directory
         for times in range(len(localPath) - 1):
@@ -328,7 +339,9 @@ class FileSystem:
         # Go to Dir and new a file
         for now in targetPath:
             self.cd(now)
-        self.create_file(localPath[-1])
+
+        # Create a new file with the same properties
+        self.create_file(fileTemp.name, fileTemp.owner, fileTemp.permission)
 
         # Back to User's original directory
         for times in range(len(targetPath)):
@@ -341,7 +354,7 @@ def calPer(pers, num):
         for j in range(len(pers)):
             for k in range(len(pers)):
                 if pers[i] + pers[j] + pers[k] == num:
-                    return i, j, k
+                    return [i, j, k]
 
 
 print("Testing question 1")
@@ -405,7 +418,6 @@ fs.ls()
 print("Testing question 5d:  mkdir and create file")
 fs = FileSystem(root)  # re-initialise fs
 
-
 fs.mkdir("test")
 # the owner of the directory should be 'default' as not indicated.
 # fs.mkdir("test","isaac") would set the owner to isaac
@@ -463,18 +475,20 @@ print(fs.find("thor"))
 # ls -l and chmod
 # fs = FileSystem(root)
 fs.cd("..")
-fs.chmod("755", "home")
+fs.chmod("753", "home")
 # fs.ls("-l")
 
 # I have the idea of making mv, by using two list to store path one by one
 # like [root,home,lfz] [root,home,thor]
 # Just use cd() while searching in lists
-# fs.pwd()
-# fs.cd("home")
-# fs.create_file("lfz")
-# fs.ls()
-# fs.mv("/root/home/lfz", "/root/home/thor")
-# fs.ls()
-# fs.pwd()
-# fs.chown_R("Steven")
+fs.cd("home")
+# fs.cd("..")
+fs.create_file("lfz")
+fs.chown("lfz", "Steven")
+fs.chmod("777", "lfz")
+fs.ls()
+fs.mv("/root/home/lfz", "/root/home/thor")
 fs.ls("-l")
+fs.pwd()
+# fs.chown_R("Steven")
+# fs.ls("-l")
